@@ -93,6 +93,7 @@ class BasicModelView extends Backbone.View
     events: =>
       'submit form': 'submitted'
       'keyup input': 'keyup'
+      'keyup textarea': 'keyup'
     
   
   class ModelFieldView extends Backbone.View
