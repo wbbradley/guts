@@ -28,15 +28,18 @@ isDescendant = (parent, child) ->
     node = node.parentNode
   false
 
+moveChildren = (elFrom, elTo) ->
+  if elTo.childNodes.length
+    throw 'moveChildren : error : destination tag should not have any children'
+
+  while elFrom.childNodes.length
+    elTo.appendChild elFrom.childNodes[0]
 
 # BasicModelView always updates and is therefore only OK for basic templates
 # that are not nested or involving forms.
 class BasicModelView extends Backbone.View
     get_template: =>
-      template = @template or @options.template
-      if @className isnt template
-        throw 'BasicModelView : error : templates should be named after the semantic class (className: ' + @className + ', template: ' + template + ')'
-      template
+      @options.template or @template or @className
 
     render: =>
       if @options.models
@@ -73,6 +76,13 @@ class BasicModelView extends Backbone.View
         throw 'CompositeModelView : error : templates should be named after the semantic class (' + @className + ', ' + template + ')'
       template
 
+    find_view_placeholder: ($el, child_view) ->
+      # Find the placeholder
+      selector = if child_view.tagName then child_view.tagName else ''
+      selector += '.' + child_view.className
+      # selector = "[data-template='#{view.chunk}']"
+      $el.find(selector)
+
     reassign_child_views: =>
       for view in @_child_views
         if view and view.el
@@ -82,10 +92,10 @@ class BasicModelView extends Backbone.View
             throw 'CompositeModelView : error : orphans should not have a home'
           parentNode = view.el.parentNode
           if parentNode
-            parentNode.removeNode(view.el)
-          selector = if view.tagName then view.tagName else ''
-          selector += '.' + view.className
-          $placeholder = @$(selector)
+            throw 'CompositeModelView : error : how did this happen?'
+
+          $placeholder = @find_view_placeholder(@$el, view)
+
           if $placeholder.length > 1
             throw 'CompositeModelView : error : found too many placeholder elements when finding selector "' + selector + '"'
           placeholder = $placeholder[0]
@@ -93,9 +103,14 @@ class BasicModelView extends Backbone.View
             throw 'CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = "' + selector + '"'
           if placeholder.children.length isnt 0
             throw 'CompositeModelView : error : found a placeholder node (selector is "' + selector + '") in your template that had children. Confused! Bailing out.'
-          parentNode = placeholder.parentNode
-          parentNode.replaceChild(view.el, placeholder)
-          if view.el.parentNode isnt parentNode
+
+          # get the children of the child view and move them into the new placeholder
+          moveChildren view.el, placeholder
+
+          # make sure the child view knows its new home
+          view.setElement placeholder, true
+
+          if not isDescendant(@el, view.el)
             throw 'CompositeModelView : error : replaceChild didn\'t work as expected'
           if view.$el[0] isnt view.el
             throw 'CompositeModelView : error : $el is confused'
