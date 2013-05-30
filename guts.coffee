@@ -60,7 +60,7 @@ class BasicModelView extends Backbone.View
   
     initialize: =>
       @render()
-      if not @render_once and not @options.render_once
+      if not (@render_once or @options.render_once)
         if @options.models
           for model_name, model of @options.models
             @listenTo model, 'change', @render
@@ -76,12 +76,24 @@ class BasicModelView extends Backbone.View
         throw 'CompositeModelView : error : templates should be named after the semantic class (' + @className + ', ' + template + ')'
       template
 
+    # find_view_placeholder is guaranteed to return a valid element that is the placeholder for this child_view
+    # ... or throw
     find_view_placeholder: ($el, child_view) ->
       # Find the placeholder
       selector = if child_view.tagName then child_view.tagName else ''
       selector += '.' + child_view.className
       # selector = "[data-template='#{view.chunk}']"
-      $el.find(selector)
+
+      $placeholder = $el.find(selector)
+
+      if $placeholder.length > 1
+        throw 'CompositeModelView : error : found too many placeholder elements when finding selector "' + selector + '"'
+      placeholder = $placeholder[0]
+      if not placeholder
+        throw 'CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = "' + selector + '"'
+      if placeholder.children.length isnt 0
+        throw 'CompositeModelView : error : found a placeholder node (selector is "' + selector + '") in your template that had children. Confused! Bailing out.'
+      return placeholder
 
     reassign_child_views: =>
       for view in @_child_views
@@ -94,15 +106,7 @@ class BasicModelView extends Backbone.View
           if parentNode
             throw 'CompositeModelView : error : how did this happen?'
 
-          $placeholder = @find_view_placeholder(@$el, view)
-
-          if $placeholder.length > 1
-            throw 'CompositeModelView : error : found too many placeholder elements when finding selector "' + selector + '"'
-          placeholder = $placeholder[0]
-          if not placeholder
-            throw 'CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = "' + selector + '"'
-          if placeholder.children.length isnt 0
-            throw 'CompositeModelView : error : found a placeholder node (selector is "' + selector + '") in your template that had children. Confused! Bailing out.'
+          placeholder = @find_view_placeholder(@$el, view)
 
           # get the children of the child view and move them into the new placeholder
           moveChildren view.el, placeholder
@@ -122,14 +126,21 @@ class BasicModelView extends Backbone.View
         # associated with a model and not individual fields
         return @
   
-      if not @model
-        throw 'CompositeModelView : error : model is not set'
+      if @options.models
+        context = {}
+        for model_name, model of @options.models
+          context[model_name] = model.toJSON()
+          context[model_name + '_url'] = model.url
+          context[model_name + '_cid'] = model.cid
+      else
+        context =
+          model: @model.toJSON()
+          cid: @model.cid
+          url: @model.url
+        if not @model
+          throw 'CompositeModelView : error : model is not set'
   
       @_rendered = true
-      context =
-        model: @model.toJSON()
-        cid: @model.cid
-        url: @model.url
       template_result = render do @get_template, context
       @$el.html(template_result)
 
@@ -150,6 +161,12 @@ class BasicModelView extends Backbone.View
         @_child_views.push view
       delete @child_views
       @reassign_child_views()
+      if (@render_on_change or @options.render_on_change)
+        if @options.models
+          for model_name, model of @options.models
+            @listenTo model, 'change', => @_rendered = false; do @render
+        else
+          @listenTo @model, 'change', => @_rendered = false; do @render
       @
   
   class CompositeModelForm extends CompositeModelView
@@ -158,6 +175,8 @@ class BasicModelView extends Backbone.View
       @render()
   
     initialize: =>
+      if @options.models
+        throw 'CompositeModelForm : error : forms do not support multiple associated models'
       super
       @listenToOnce @model, 'change', @rerender
   
