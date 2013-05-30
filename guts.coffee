@@ -20,26 +20,76 @@ handlebars_render = (template_name, context) ->
 
 render = handlebars_render
 
+isDescendant = (parent, child) ->
+  node = child.parentNode
+  while node isnt null
+    if node is parent
+      return true
+    node = node.parentNode
+  false
+
+
 # BasicModelView always updates and is therefore only OK for basic templates
 # that are not nested or involving forms.
 class BasicModelView extends Backbone.View
     render: =>
-      context =
-        model: @model.toJSON()
-        cid: @model.cid
-        url: @model.url
+      if @options.models
+        context = {}
+        for model_name, model of @options.models
+          context[model_name] = model.toJSON()
+          context[model_name + '_url'] = model.url
+          context[model_name + '_cid'] = model.cid
+      else
+        context =
+          model: @model.toJSON()
+          cid: @model.cid
+          url: @model.url
       template_result = render (@template or @options.template), context
       # console.log 'BasicModelView : info : rendered "' + template_result + '"'
       @$el.html(template_result)
       @
   
     initialize: =>
+      if not @$el
+        throw 'BasicModelView : error : you must specify a valid \'el\' when creating a BasicModelView'
       @render()
-      @listenTo @model, 'change', @render
-  
+      if not @render_once and not @options.render_once
+        if @options.models
+          for model_name, model of @options.models
+            @listenTo model, 'change', @render
+        else
+          @listenTo @model, 'change', @render
   
   class CompositeModelView extends Backbone.View
     _rendered: false
+    reassign_child_views: =>
+      for view in @_child_views
+        if view and view.el
+          if isDescendant(@el, view.el)
+            throw 'CompositeModelView : error : existing view elements should not be magical children'
+          if isDescendant(document, view.el)
+            throw 'CompositeModelView : error : orphans should not have a home'
+          parentNode = view.el.parentNode
+          if parentNode
+            parentNode.removeNode(view.el)
+          selector = if view.tagName then view.tagName else ''
+          selector += '.' + view.className
+          $placeholder = @$(selector)
+          if $placeholder.length > 1
+            throw 'CompositeModelView : error : found too many placeholder elements when finding selector "' + selector + '"'
+          placeholder = $placeholder[0]
+          if not placeholder
+            throw 'CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = "' + selector + '"'
+          if placeholder.children.length isnt 0
+            throw 'CompositeModelView : error : found a placeholder node (selector is "' + selector + '") in your template that had children. Confused! Bailing out.'
+          parentNode = placeholder.parentNode
+          parentNode.replaceChild(view.el, placeholder)
+          if view.el.parentNode isnt parentNode
+            throw 'CompositeModelView : error : replaceChild didn\'t work as expected'
+          if view.$el[0] isnt view.el
+            throw 'CompositeModelView : error : $el is confused'
+      return
+       
     render: =>
       if @_rendered
         # CompositeModelView should not need to render multiple times since it is
@@ -56,12 +106,26 @@ class BasicModelView extends Backbone.View
         url: @model.url
       template_result = render (@template or @options.template), context
       @$el.html(template_result)
+
+      # Put the children back in their place
+      @reassign_child_views()
       @
   
     initialize: =>
+      if not @$el
+        throw 'CompositeModelView : error : you must specify a valid \'el\' when creating a CompositeModelView'
+      @_child_views = []
       @render()
       for binding, view of _.result(@, 'child_views')
-        @[binding] = if typeof view is 'function' then view() else view
+        view = if typeof view is 'function' then view() else view
+        if not view.className
+          console.log 'CompositeModelView : error : child view \'' + binding + '\' must be initialized with a \'className\''
+          throw view
+        @[binding] = view
+        @_child_views.push view
+      delete @child_views
+      @reassign_child_views()
+      @
   
   class CompositeModelForm extends CompositeModelView
     rerender: =>
@@ -69,6 +133,8 @@ class BasicModelView extends Backbone.View
       @render()
   
     initialize: =>
+      if not @$el
+        throw 'CompositeModelForm : error : you must specify a valid \'el\' when creating a CompositeModelForm'
       super
       @listenToOnce @model, 'change', @rerender
   
@@ -106,6 +172,8 @@ class BasicModelView extends Backbone.View
       @
   
     initialize: (options) =>
+      if not @$el
+        throw 'ModelFieldView : error : you must specify a valid \'el\' when creating a ModelFieldView'
       if not (@template or @options.template)
         @render = =>
           value = @options.model.get(@options.property)
@@ -128,6 +196,8 @@ class BasicModelView extends Backbone.View
         @$el.attr(@options.attribute, value)
       @
     initialize: (options) =>
+      if not @$el
+        throw 'ModelAttributeFieldView : error : you must specify a valid \'el\' when creating a ModelAttributeFieldView'
       if @options.is_form_field
         @listenToOnce @options.model, 'change:' + @options.property, @render
       else
@@ -136,10 +206,14 @@ class BasicModelView extends Backbone.View
   
   class BaseCollectionView extends Backbone.View
     initialize: (options) =>
+      if not @$el
+        throw 'BaseCollectionView : error : you must specify a valid \'el\' when creating a BaseCollectionView'
       if not options.item_view_class
-        throw 'BaseCollectionView : error : no item_view_class specified'
+        throw 'BaseCollectionView : error : You must specify an item_view_class when creating a BaseCollectionView'
       if not options.collection
-        throw 'BaseCollectionView : error : empty or no collection specified'
+        throw 'BaseCollectionView : error : You must specify a collection when creating a BaseCollectionView'
+      if options.model
+        console.log 'BaseCollectionView : warning : BaseCollectionView does not pay attention to \'model\''
   
       @_childViews = []
       @collection.each @add
@@ -151,7 +225,8 @@ class BasicModelView extends Backbone.View
       childView = new @options.item_view_class
         model: model
       @_childViews.push childView
-      @$el.append(childView.render().el)
+      childEl = childView.render().el
+      el = @$el.append(childEl)
   
     remove: (model) =>
       window.alert 'remove CALLED'
