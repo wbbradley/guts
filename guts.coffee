@@ -32,6 +32,12 @@ isDescendant = (parent, child) ->
 # BasicModelView always updates and is therefore only OK for basic templates
 # that are not nested or involving forms.
 class BasicModelView extends Backbone.View
+    get_template: =>
+      template = @template or @options.template
+      if @className isnt template
+        throw 'BasicModelView : error : templates should be named after the semantic class (className: ' + @className + ', template: ' + template + ')'
+      template
+
     render: =>
       if @options.models
         context = {}
@@ -44,14 +50,12 @@ class BasicModelView extends Backbone.View
           model: @model.toJSON()
           cid: @model.cid
           url: @model.url
-      template_result = render (@template or @options.template), context
+      template_result = render @get_template(), context
       # console.log 'BasicModelView : info : rendered "' + template_result + '"'
       @$el.html(template_result)
       @
   
     initialize: =>
-      if not @$el
-        throw 'BasicModelView : error : you must specify a valid \'el\' when creating a BasicModelView'
       @render()
       if not @render_once and not @options.render_once
         if @options.models
@@ -62,6 +66,13 @@ class BasicModelView extends Backbone.View
   
   class CompositeModelView extends Backbone.View
     _rendered: false
+
+    get_template: =>
+      template = @template or @options.template
+      if @className isnt template
+        throw 'CompositeModelView : error : templates should be named after the semantic class (' + @className + ', ' + template + ')'
+      template
+
     reassign_child_views: =>
       for view in @_child_views
         if view and view.el
@@ -104,7 +115,7 @@ class BasicModelView extends Backbone.View
         model: @model.toJSON()
         cid: @model.cid
         url: @model.url
-      template_result = render (@template or @options.template), context
+      template_result = render do @get_template, context
       @$el.html(template_result)
 
       # Put the children back in their place
@@ -112,8 +123,7 @@ class BasicModelView extends Backbone.View
       @
   
     initialize: =>
-      if not @$el
-        throw 'CompositeModelView : error : you must specify a valid \'el\' when creating a CompositeModelView'
+      template = @get_template()
       @_child_views = []
       @render()
       for binding, view of _.result(@, 'child_views')
@@ -133,8 +143,6 @@ class BasicModelView extends Backbone.View
       @render()
   
     initialize: =>
-      if not @$el
-        throw 'CompositeModelForm : error : you must specify a valid \'el\' when creating a CompositeModelForm'
       super
       @listenToOnce @model, 'change', @rerender
   
@@ -167,14 +175,12 @@ class BasicModelView extends Backbone.View
       value = @options.model.get(@options.property)
       context = {}
       context[@options.property] = value
-      template_result = render (@template or @options.template), context
+      template_result = render @get_template(), context
       @$el.html(template_result)
       @
   
     initialize: (options) =>
-      if not @$el
-        throw 'ModelFieldView : error : you must specify a valid \'el\' when creating a ModelFieldView'
-      if not (@template or @options.template)
+      if not @get_template()
         @render = =>
           value = @options.model.get(@options.property)
           if value
@@ -189,25 +195,8 @@ class BasicModelView extends Backbone.View
         @render()
         @listenTo @options.model, 'change:' + @options.property, @render
   
-  class ModelAttributeFieldView extends Backbone.View
-    render: =>
-      value = @options.model.get(@options.property)
-      if value
-        @$el.attr(@options.attribute, value)
-      @
-    initialize: (options) =>
-      if not @$el
-        throw 'ModelAttributeFieldView : error : you must specify a valid \'el\' when creating a ModelAttributeFieldView'
-      if @options.is_form_field
-        @listenToOnce @options.model, 'change:' + @options.property, @render
-      else
-        @render()
-        @listenTo @options.model, 'change:' + @options.property, @render
-  
   class BaseCollectionView extends Backbone.View
     initialize: (options) =>
-      if not @$el
-        throw 'BaseCollectionView : error : you must specify a valid \'el\' when creating a BaseCollectionView'
       if not options.item_view_class
         throw 'BaseCollectionView : error : You must specify an item_view_class when creating a BaseCollectionView'
       if not options.collection
