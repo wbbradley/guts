@@ -102,9 +102,6 @@ class BasicModelView extends Backbone.View
             throw 'CompositeModelView : error : existing view elements should not be magical children'
           if isDescendant(document, view.el)
             throw 'CompositeModelView : error : orphans should not have a home'
-          parentNode = view.el.parentNode
-          if parentNode
-            throw 'CompositeModelView : error : how did this happen?'
 
           placeholder = @find_view_placeholder(@$el, view)
 
