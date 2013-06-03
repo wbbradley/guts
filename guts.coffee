@@ -148,7 +148,7 @@ class CompositeModelView extends Backbone.View
     template = @get_template()
     @_child_views = []
     @render()
-    for binding, view of _.result(@, 'child_views')
+    for binding, view of _.result(@options, 'child_views') or _.result(@, 'child_views')
       view = if typeof view is 'function' then view() else view
       if not view.className
         console.log "CompositeModelView : error : child view '#{binding}' must be initialized with a \'className\'"
