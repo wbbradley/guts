@@ -49,6 +49,8 @@ class BasicModelView extends Backbone.View
           context[model_name + '_url'] = model.url
           context[model_name + '_cid'] = model.cid
       else
+        if not @model
+          throw new Error 'BasicModelView : error : model is not set'
         context =
           model: @model.toJSON()
           cid: @model.cid
@@ -129,12 +131,12 @@ class CompositeModelView extends Backbone.View
         context[model_name + '_url'] = model.url
         context[model_name + '_cid'] = model.cid
     else
+      if not @model
+        throw 'CompositeModelView : error : model is not set'
       context =
         model: @model.toJSON()
         cid: @model.cid
         url: @model.url
-      if not @model
-        throw 'CompositeModelView : error : model is not set'
 
     @_rendered = true
     template_result = render do @get_template, context
@@ -186,6 +188,22 @@ class CompositeModelForm extends CompositeModelView
     e.preventDefault()
     @save
 
+  file_chosen: (e) =>
+    # https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
+    if typeof @model.set_file_field isnt 'function'
+      console.log 'Guts.CompositeModelForm : warning : file inputs can be handled using Backbone.FormDataTransport.Model associated with this CompositeModelForm'
+      return
+
+    for file_element in @$('form input[type=file]')
+      if file_element.files.length > 0
+        for file in file_element.files
+          console.log "CompositeModelForm : info : loading file '#{file.name}' from file field '#{file_element.name}'"
+
+          @model.set_file_field file_element.name, file
+          @model.save()
+    return
+
+
   keyup: (e) =>
     data = Backbone.Syphon.serialize(@)
     @model.set data
@@ -199,6 +217,7 @@ class CompositeModelForm extends CompositeModelView
       'submit form': 'submitted'
       'keyup input': 'keyup'
       'keyup textarea': 'keyup'
+      'change input[type=file]': 'file_chosen'
     if @extra_events
       form_events = _.extend(form_events, _.result(@, 'extra_events'))
     form_events
@@ -252,8 +271,7 @@ class BaseCollectionView extends Backbone.View
     el = @$el.append(childEl)
 
   remove: (model) =>
-    _viewToRemove = _.where @_child_views, (view) ->
-      view.model is model
+    _viewToRemove = _.where @_child_views, (view) -> view.model is model
     if not _viewToRemove or not _viewToRemove[0]
       throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model #{model.cid}"
     viewToRemove = _viewToRemove[0]
