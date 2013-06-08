@@ -38,35 +38,35 @@ moveChildren = (elFrom, elTo) ->
 # BasicModelView always updates and is therefore only OK for basic templates
 # that are not nested or involving forms.
 class BasicModelView extends Backbone.View
-    get_template: =>
-      @options.template or @template or @className
+  get_template: =>
+    @options.template or @template or @className
 
-    render: =>
+  render: =>
+    if @options.models
+      context = {}
+      for model_name, model of @options.models
+        context[model_name] = model.toJSON()
+        context[model_name + '_url'] = model.url
+        context[model_name + '_cid'] = model.cid
+    else
+      if not @model
+        throw new Error 'BasicModelView : error : model is not set'
+      context =
+        model: @model.toJSON()
+        cid: @model.cid
+        url: @model.url
+    template_result = render @get_template(), context
+    @$el.html(template_result)
+    @
+
+  initialize: =>
+    @render()
+    if not (@render_once or @options.render_once)
       if @options.models
-        context = {}
         for model_name, model of @options.models
-          context[model_name] = model.toJSON()
-          context[model_name + '_url'] = model.url
-          context[model_name + '_cid'] = model.cid
+          @listenTo model, 'change', @render
       else
-        if not @model
-          throw new Error 'BasicModelView : error : model is not set'
-        context =
-          model: @model.toJSON()
-          cid: @model.cid
-          url: @model.url
-      template_result = render @get_template(), context
-      @$el.html(template_result)
-      @
-  
-    initialize: =>
-      @render()
-      if not (@render_once or @options.render_once)
-        if @options.models
-          for model_name, model of @options.models
-            @listenTo model, 'change', @render
-        else
-          @listenTo @model, 'change', @render
+        @listenTo @model, 'change', @render
   
 class CompositeModelView extends Backbone.View
   _rendered: false
