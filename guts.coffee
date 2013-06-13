@@ -138,6 +138,7 @@ class CompositeModelView extends Backbone.View
 
     @_rendered = true
     template_result = render do @get_template, context
+    orphans = @$el.children().detach()
     @$el.html(template_result)
 
     # Put the children back in their place
@@ -200,6 +201,7 @@ class CompositeModelForm extends CompositeModelView
 
           @model.set_file_field file_element.name, file
           @model.save()
+          @listenToOnce @model, 'change', @rerender
     return
 
 
