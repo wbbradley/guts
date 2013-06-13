@@ -72,7 +72,7 @@ class CompositeModelView extends Backbone.View
   _rendered: false
 
   get_template: =>
-    template = @template or @options.template
+    template = @template or @options.template or @className
     if @className isnt template
       throw "CompositeModelView : error : templates should be named after the semantic class (#{@className}, #{template})"
     template
@@ -81,9 +81,7 @@ class CompositeModelView extends Backbone.View
   # ... or throw
   find_view_placeholder: ($el, child_view) ->
     # Find the placeholder
-    selector = if child_view.tagName then child_view.tagName else ''
-    selector += ".#{child_view.className}"
-    # selector = "[data-template='#{view.chunk}']"
+    selector = ".#{child_view.className}"
 
     $placeholder = $el.find(selector)
 
@@ -176,7 +174,8 @@ class CompositeModelForm extends CompositeModelView
     if @options.models
       throw 'CompositeModelForm : error : forms do not support multiple associated models'
     super
-    @listenToOnce @model, 'change', @rerender
+    if not @model.has('url')
+      @listenToOnce @model, 'change', @rerender
 
   save: =>
     @listenToOnce @model, 'sync', =>
