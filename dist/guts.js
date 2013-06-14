@@ -120,6 +120,7 @@
 
     function CompositeModelView() {
       this.initialize = __bind(this.initialize, this);
+      this.rerender = __bind(this.rerender, this);
       this.render = __bind(this.render, this);
       this.reassign_child_views = __bind(this.reassign_child_views, this);
       this.get_template = __bind(this.get_template, this);
@@ -212,9 +213,13 @@
       return this;
     };
 
+    CompositeModelView.prototype.rerender = function() {
+      this._rendered = false;
+      return this.render();
+    };
+
     CompositeModelView.prototype.initialize = function() {
-      var binding, model, model_name, template, view, _ref2, _ref3,
-        _this = this;
+      var binding, model, model_name, template, view, _ref2, _ref3;
       template = this.get_template();
       this._child_views = [];
       this.render();
@@ -236,16 +241,10 @@
           _ref3 = this.options.models;
           for (model_name in _ref3) {
             model = _ref3[model_name];
-            this.listenTo(model, 'change', function() {
-              _this._rendered = false;
-              return _this.render();
-            });
+            this.listenTo(model, 'change', this.rerender);
           }
         } else {
-          this.listenTo(this.model, 'change', function() {
-            _this._rendered = false;
-            return _this.render();
-          });
+          this.listenTo(this.model, 'change', this.rerender);
         }
       }
       return this;
@@ -265,15 +264,9 @@
       this.submitted = __bind(this.submitted, this);
       this.save = __bind(this.save, this);
       this.initialize = __bind(this.initialize, this);
-      this.rerender = __bind(this.rerender, this);
       _ref2 = CompositeModelForm.__super__.constructor.apply(this, arguments);
       return _ref2;
     }
-
-    CompositeModelForm.prototype.rerender = function() {
-      this._rendered = false;
-      return this.render();
-    };
 
     CompositeModelForm.prototype.initialize = function() {
       if (this.options.models) {
@@ -297,7 +290,8 @@
 
     CompositeModelForm.prototype.submitted = function(e) {
       e.preventDefault();
-      return this.save;
+      this.save();
+      return false;
     };
 
     CompositeModelForm.prototype.file_chosen = function(e) {
@@ -306,7 +300,7 @@
         console.log('Guts.CompositeModelForm : warning : file inputs can be handled using Backbone.FormDataTransport.Model associated with this CompositeModelForm');
         return;
       }
-      _ref3 = this.$('form input[type=file]');
+      _ref3 = this.$('input[type=file]');
       for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
         file_element = _ref3[_i];
         if (file_element.files.length > 0) {
@@ -316,7 +310,7 @@
             console.log("CompositeModelForm : info : loading file '" + file.name + "' from file field '" + file_element.name + "'");
             this.model.set_file_field(file_element.name, file);
             this.model.save();
-            this.listenToOnce(this.model, 'change', this.rerender);
+            this.listenToOnce(this.model, "change:" + file_element.name, this.rerender);
           }
         }
       }

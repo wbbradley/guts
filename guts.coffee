@@ -35,6 +35,7 @@ moveChildren = (elFrom, elTo) ->
   while elFrom.childNodes.length
     elTo.appendChild elFrom.childNodes[0]
 
+
 # BasicModelView always updates and is therefore only OK for basic templates
 # that are not nested or involving forms.
 class BasicModelView extends Backbone.View
@@ -145,6 +146,10 @@ class CompositeModelView extends Backbone.View
     @reassign_child_views()
     @
 
+  rerender: =>
+    @_rendered = false
+    do @render
+
   initialize: =>
     template = @get_template()
     @_child_views = []
@@ -161,16 +166,12 @@ class CompositeModelView extends Backbone.View
     if (@render_on_change or @options.render_on_change)
       if @options.models
         for model_name, model of @options.models
-          @listenTo model, 'change', => @_rendered = false; do @render
+          @listenTo model, 'change', @rerender
       else
-        @listenTo @model, 'change', => @_rendered = false; do @render
+        @listenTo @model, 'change', @rerender
     @
 
 class CompositeModelForm extends CompositeModelView
-  rerender: =>
-    @_rendered = false
-    @render()
-
   initialize: =>
     if @options.models
       throw 'CompositeModelForm : error : forms do not support multiple associated models'
@@ -186,7 +187,8 @@ class CompositeModelForm extends CompositeModelView
 
   submitted: (e) =>
     e.preventDefault()
-    @save
+    @save()
+    return false
 
   file_chosen: (e) =>
     # https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
@@ -194,14 +196,14 @@ class CompositeModelForm extends CompositeModelView
       console.log 'Guts.CompositeModelForm : warning : file inputs can be handled using Backbone.FormDataTransport.Model associated with this CompositeModelForm'
       return
 
-    for file_element in @$('form input[type=file]')
+    for file_element in @$('input[type=file]')
       if file_element.files.length > 0
         for file in file_element.files
           console.log "CompositeModelForm : info : loading file '#{file.name}' from file field '#{file_element.name}'"
 
           @model.set_file_field file_element.name, file
           @model.save()
-          @listenToOnce @model, 'change', @rerender
+          @listenToOnce @model, "change:#{file_element.name}", @rerender
     return
 
 
