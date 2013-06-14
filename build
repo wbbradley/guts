@@ -1,0 +1,7 @@
+#!/bin/sh
+echo Compiling guts.coffee...
+./node_modules/.bin/coffee -o dist -c guts.coffee
+echo Saving build to dist/`npm ll | grep ^guts | sed 's/@/-/'`.js
+cp dist/guts.js dist/`npm ll | grep ^guts | sed 's/@/-/'`.js
+echo Done.
+
