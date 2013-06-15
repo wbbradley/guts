@@ -223,6 +223,8 @@ class CompositeModelForm extends CompositeModelView
       'change input[type=file]': 'file_chosen'
     if @extra_events
       form_events = _.extend(form_events, _.result(@, 'extra_events'))
+    if @options.extra_events
+      form_events = _.extend(form_events, _.result(@options, 'extra_events'))
     form_events
   
 
@@ -269,9 +271,26 @@ class BaseCollectionView extends Backbone.View
   add: (model) =>
     childView = new @options.item_view_class
       model: model
-    @_child_views.push childView
+    comparator = @collection.comparator or @options.comparator or @comparator
+    if comparator
+      if typeof comparator is 'string'
+        comparator_string = comparator
+        comparator = (model) => model.get comparator_string
+      else
+        throw "Guts : error : BaseCollectionView only understands function or string comparators"
+      index = @collection.sortedIndex model, comparator
+    else
+      index = @_child_views.length
+
     childEl = childView.render().el
-    el = @$el.append(childEl)
+
+    if index < @_child_views.length
+      referenceEl = @_child_views[index].el
+      @el.insertBefore childEl, referenceEl
+    else
+      el = @$el.append(childEl)
+    @_child_views.splice index, 0, childView
+
 
   remove: (model) =>
     _viewToRemove = _.where @_child_views, (view) -> view.model is model
