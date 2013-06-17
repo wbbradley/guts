@@ -300,6 +300,10 @@ class BaseCollectionView extends Backbone.View
     @_child_views = _.where @_child_views, (view) -> view isnt viewToRemove
     @$(viewToRemove.el).remove()
 
+  at: (index) =>
+    return @_child_views[index]
+
+
 # Export Guts
 class Guts
   @BasicModelView:     BasicModelView
