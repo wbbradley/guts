@@ -4,6 +4,7 @@ FILE=$BASENAME.coffee
 VERSIONED_BASENAME=`npm ll | grep ^$BASENAME | sed 's/@/-/'`
 echo Compiling $FILE
 ./node_modules/.bin/coffee -o dist -c $FILE
+./node_modules/.bin/coffee -o dist -c test.coffee
 echo Saving build to dist/$VERSIONED_BASENAME.js
 echo /* $VERSIONED_BASENAME */ > dist/$VERSIONED_BASENAME.js
 cat dist/$BASENAME.js >> dist/$VERSIONED_BASENAME.js
