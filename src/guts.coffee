@@ -60,7 +60,7 @@ class BasicModelView extends Backbone.View
     @$el.html(template_result)
     @
 
-  initialize: =>
+  initialize: (options) =>
     @options = options
     @render()
     if not (@render_once or @options.render_once)

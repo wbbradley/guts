@@ -95,7 +95,7 @@
       return this;
     };
 
-    BasicModelView.prototype.initialize = function() {
+    BasicModelView.prototype.initialize = function(options) {
       var model, model_name, _ref1, _results;
       this.options = options;
       this.render();
