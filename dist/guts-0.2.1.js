@@ -461,16 +461,15 @@
     };
 
     BaseCollectionView.prototype.remove = function(model) {
-      var viewToRemove, _viewToRemove;
-      _viewToRemove = _.where(this._child_views, function(view) {
-        return view.model === model;
+      var viewToRemove;
+      viewToRemove = _.findWhere(this._child_views, {
+        model: model
       });
-      if (!_viewToRemove || !_viewToRemove[0]) {
+      if (!typeof viewToRemove === 'object') {
         throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model " + model.cid;
       }
-      viewToRemove = _viewToRemove[0];
-      this._child_views = _.where(this._child_views, function(view) {
-        return view !== viewToRemove;
+      this._child_views = _.reject(this._child_views, function(view) {
+        return view === viewToRemove;
       });
       return this.$(viewToRemove.el).remove();
     };
