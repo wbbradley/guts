@@ -1,0 +1,12 @@
+[submodule "tests/underscore"]
+	path = tests/underscore
+	url = https://github.com/documentcloud/underscore.git
+[submodule "tests/backbone"]
+	path = tests/backbone
+	url = https://github.com/documentcloud/backbone.git
+[submodule "tests/handlebars"]
+	path = tests/handlebars
+	url = https://github.com/wycats/handlebars.js.git
+[submodule "tests/jquery"]
+	path = tests/jquery
+	url = https://github.com/jquery/jquery.git
