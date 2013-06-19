@@ -267,6 +267,8 @@ class BaseCollectionView extends Backbone.View
 
     @listenTo @collection, 'add', @add
     @listenTo @collection, 'remove', @remove
+    @render()
+
  
   add: (model) =>
     childView = new @options.item_view_class
@@ -293,6 +295,7 @@ class BaseCollectionView extends Backbone.View
 
 
   remove: (model) =>
+    # REVIEW(will): check that where is not a lodash-only-ism
     _viewToRemove = _.where @_child_views, (view) -> view.model is model
     if not _viewToRemove or not _viewToRemove[0]
       throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model #{model.cid}"
