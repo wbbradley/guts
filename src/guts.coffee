@@ -61,6 +61,7 @@ class BasicModelView extends Backbone.View
     @
 
   initialize: =>
+    @options = options
     @render()
     if not (@render_once or @options.render_once)
       if @options.models
@@ -150,7 +151,8 @@ class CompositeModelView extends Backbone.View
     @_rendered = false
     do @render
 
-  initialize: =>
+  initialize: (options) =>
+    @options = options
     template = @get_template()
     @_child_views = []
     @render()
@@ -172,8 +174,8 @@ class CompositeModelView extends Backbone.View
     @
 
 class CompositeModelForm extends CompositeModelView
-  initialize: =>
-    if @options.models
+  initialize: (options) =>
+    if options.models
       throw 'CompositeModelForm : error : forms do not support multiple associated models'
     super
     if not @model.has('url')
@@ -238,6 +240,7 @@ class ModelFieldView extends Backbone.View
     @
 
   initialize: (options) =>
+    @options = options
     if not @get_template()
       @render = =>
         value = @options.model.get(@options.property)
@@ -255,6 +258,7 @@ class ModelFieldView extends Backbone.View
 
 class BaseCollectionView extends Backbone.View
   initialize: (options) =>
+    @options = options
     if not options.item_view_class
       throw 'BaseCollectionView : error : You must specify an item_view_class when creating a BaseCollectionView'
     if not options.collection

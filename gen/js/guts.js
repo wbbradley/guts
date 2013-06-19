@@ -94,6 +94,7 @@
 
     BasicModelView.prototype.initialize = function() {
       var model, model_name, _ref1, _results;
+      this.options = options;
       this.render();
       if (!(this.render_once || this.options.render_once)) {
         if (this.options.models) {
@@ -217,8 +218,9 @@
       return this.render();
     };
 
-    CompositeModelView.prototype.initialize = function() {
+    CompositeModelView.prototype.initialize = function(options) {
       var binding, model, model_name, template, view, _ref2, _ref3;
+      this.options = options;
       template = this.get_template();
       this._child_views = [];
       this.render();
@@ -267,8 +269,8 @@
       return _ref2;
     }
 
-    CompositeModelForm.prototype.initialize = function() {
-      if (this.options.models) {
+    CompositeModelForm.prototype.initialize = function(options) {
+      if (options.models) {
         throw 'CompositeModelForm : error : forms do not support multiple associated models';
       }
       CompositeModelForm.__super__.initialize.apply(this, arguments);
@@ -368,6 +370,7 @@
 
     ModelFieldView.prototype.initialize = function(options) {
       var _this = this;
+      this.options = options;
       if (!this.get_template()) {
         this.render = function() {
           var value;
@@ -407,6 +410,7 @@
     }
 
     BaseCollectionView.prototype.initialize = function(options) {
+      this.options = options;
       if (!options.item_view_class) {
         throw 'BaseCollectionView : error : You must specify an item_view_class when creating a BaseCollectionView';
       }
