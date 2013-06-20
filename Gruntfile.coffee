@@ -23,6 +23,15 @@ module.exports = (grunt) ->
         files: 'src/**/*.coffee'
         tasks: ['coffee']
 
+    tests:
+      compile:
+        files: [{
+          expand: true
+          cwd: 'tests/src'
+          src: ['*.coffee', '../../src/guts.coffee']
+          dest: '../gen'
+          }]
+
 
   grunt.loadNpmTasks('grunt-contrib-coffee')
   grunt.loadNpmTasks('grunt-contrib-watch')
