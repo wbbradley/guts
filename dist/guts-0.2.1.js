@@ -454,8 +454,8 @@
 
     BaseCollectionView.prototype.remove = function(model) {
       var viewToRemove;
-      viewToRemove = _.findWhere(this._child_views, {
-        model: model
+      viewToRemove = _.find(this._child_views, function(item) {
+        return item.model === model;
       });
       if (!typeof viewToRemove === 'object') {
         throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model " + model.cid;

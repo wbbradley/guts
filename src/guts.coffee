@@ -293,8 +293,7 @@ class BaseCollectionView extends Backbone.View
 
 
   remove: (model) =>
-    # REVIEW(will): check that where is not a lodash-only-ism
-    viewToRemove = _.findWhere @_child_views, {model: model}
+    viewToRemove = _.find @_child_views, (item) -> item.model is model
     if not typeof viewToRemove is 'object'
       throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model #{model.cid}"
     # remove the view from our child views
