@@ -149,7 +149,7 @@ class CompositeModelView extends Backbone.View
 
   rerender: =>
     @_rendered = false
-    do @render
+    @render()
 
   initialize: (options) =>
     @options = options
@@ -218,16 +218,10 @@ class CompositeModelForm extends CompositeModelView
     @timer = window.setTimeout @save, 2000
 
   events: =>
-    form_events =
-      'submit form': 'submitted'
-      'keyup input': 'keyup'
-      'keyup textarea': 'keyup'
-      'change input[type=file]': 'file_chosen'
-    if @extra_events
-      form_events = _.extend(form_events, _.result(@, 'extra_events'))
-    if @options.extra_events
-      form_events = _.extend(form_events, _.result(@options, 'extra_events'))
-    form_events
+    'submit form': 'submitted'
+    'keyup input': 'keyup'
+    'keyup textarea': 'keyup'
+    'change input[type=file]': 'file_chosen'
   
 
 class ModelFieldView extends Backbone.View

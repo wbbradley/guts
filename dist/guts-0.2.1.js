@@ -331,20 +331,12 @@
     };
 
     CompositeModelForm.prototype.events = function() {
-      var form_events;
-      form_events = {
+      return {
         'submit form': 'submitted',
         'keyup input': 'keyup',
         'keyup textarea': 'keyup',
         'change input[type=file]': 'file_chosen'
       };
-      if (this.extra_events) {
-        form_events = _.extend(form_events, _.result(this, 'extra_events'));
-      }
-      if (this.options.extra_events) {
-        form_events = _.extend(form_events, _.result(this.options, 'extra_events'));
-      }
-      return form_events;
     };
 
     return CompositeModelForm;
