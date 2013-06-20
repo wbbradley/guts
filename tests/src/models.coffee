@@ -1,0 +1,3 @@
+class TestBasicModelViewModel extends Backbone.Model
+
+@TestBasicModelViewModel = TestBasicModelViewModel

@@ -10,3 +10,6 @@
 [submodule "tests/jquery"]
 	path = tests/jquery
 	url = https://github.com/jquery/jquery.git
+[submodule "tests/lib/jasmine"]
+	path = tests/lib/jasmine
+	url = https://github.com/pivotal/jasmine.git
