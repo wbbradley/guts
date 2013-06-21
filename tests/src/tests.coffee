@@ -8,19 +8,68 @@ Guts.render = (template_name, context)->
 
 window.runTests = ->
 	describe "BasicModelView", ->
-		$element = $("<div class='guts-basicmodelview-test'></div>")
-		$('body').append($element)
-		
-		model = new TestBasicModelViewModel
-			title: 'Test Model'
-			description: 'I am for testing!'
-		view = new TestBasicModelView
-			model: model
-			el: $('.guts-basicmodelview-test')
 
-		it "Renders to the page", ->
-			title = $element.children('#bmv-title').text()
-			description = $element.children('#bmv-description').text()
-			expect(title).toEqual(model.get('title'))
-			expect(description).toEqual(model.get('description'))
+		describe "Single Model", ->
+			$element = $("<div class='guts-basicmodelview-single-model-test'></div>")
+			$('body').append($element)
+
+			beforeEach ->
+				@model = new TestBasicModelViewModel
+					title: 'Test Model'
+					description: 'I am for testing!'
+				@view = new TestBasicModelView
+					className: 'guts-basicmodelview-single-model-test'
+					model: @model
+					el: $element
+
+			afterEach ->
+				$element.empty()
+
+			it "Renders to the page", ->
+				title = $element.children('#bmvsm-title').text()
+				description = $element.children('#bmvsm-description').text()
+				expect(title).toEqual(@model.get('title'))
+				expect(description).toEqual(@model.get('description'))
+
+			it "Rerenders when the model is changed", ->
+				new_title = "I am a new test title"
+				@model.set('title', new_title)
+				$new_title = $element.children('#bmvsm-title').text()
+				expect(new_title).toEqual($new_title)
+
+		describe "Multiple Models", ->
+			$element = $("<div class='guts-basicmodelview-multiple-model-test'></div>")
+			$('body').append($element)
+
+			beforeEach ->
+				@model_one = new TestBasicModelViewModel
+					title: 'Test Model 1'
+				@model_two = new TestBasicModelViewModel
+					title: 'Test Model 2'
+				@view = new TestBasicModelView
+					className: 'guts-basicmodelview-multiple-model-test'
+					el: $element
+					models:
+						first_model: @model_one
+						second_model: @model_two
+
+			it "Renders to the page", ->
+				console.log $element.children()
+				first_title = $element.children('#bmvmm-first-model-title').text()
+				second_title = $element.children('#bmvmm-second-model-title').text()
+				expect(first_title).toEqual(@model_one.get('title'))
+				expect(second_title).toEqual(@model_two.get('title'))
+
+			it "Rerenders when either model is changed", ->
+				first_model_new_title = "I am the first new title!"
+				@model_one.set('title', first_model_new_title)
+				$first_model_new_title = $element.children('#bmvmm-first-model-title').text()
+				expect(first_model_new_title).toEqual($first_model_new_title)
+
+				second_model_new_title = "I am the second new title!"
+				@model_two.set('title', second_model_new_title)
+				$second_model_new_title = $element.children('#bmvmm-second-model-title').text()
+				expect(second_model_new_title).toEqual($second_model_new_title)
 			
+			afterEach ->
+				$element.empty()
