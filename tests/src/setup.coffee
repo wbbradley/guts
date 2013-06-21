@@ -1,6 +1,8 @@
 templates = [
 	'guts-basicmodelview-single-model-test',
-	'guts-basicmodelview-multiple-model-test'
+	'guts-basicmodelview-multiple-model-test',
+	'guts-compositemodelview-test',
+	'guts-basecollectionview-test'
 ]
 
 loadTemplates = ->

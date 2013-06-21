@@ -1,3 +1,5 @@
 class TestBasicModelViewModel extends Backbone.Model
+class TestCompositeModelViewModel extends Backbone.Model
 
 @TestBasicModelViewModel = TestBasicModelViewModel
+@TestCompositeModelViewModel = TestCompositeModelViewModel

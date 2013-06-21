@@ -1,16 +1,10 @@
 $ = require 'jquery'
-page = require('webpage').create()
+Browser = require 'zombie'
 
-page.onConsoleMessage = (msg)->
-	console.log msg
+browser = new Browser()
 
-page.open 'http://localhost:8080', ->
-	failure = page.evaluate ->
-		response = false
-		sync = setTimeout(->
-			$body = $(document.body)
-			response = $body.find('.failingAlert').length != 0
-		, 1000)
-		response
-	exit_status = Number(!failure)
-	phantom.exit(exit_status)
+browser.visit('http://localhost:8080', ->
+	$body = $(browser.body)
+	failure = $body.find('.failingAlert').length != 0
+	process.exit Number(failure)
+)
