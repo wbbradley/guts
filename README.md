@@ -1,14 +1,37 @@
 guts
 ====
 
+[![Build Status](https://travis-ci.org/wbbradley/guts.png?branch=master)](https://travis-ci.org/wbbradley/guts)
+
 Guts - a Backbone View Framework
 
-The latest distribution is available in dist/guts.js.
+Guts is intended to sit on top of [Backbone](https://github.com/documentcloud/backbone).
 
-To build dist/guts.js:
+## Setup
+
+### Install Node.js
+
+```shell
+brew install node
+```
+
+### Install Grunt-CLI
+```shell
+npm install -g grunt-cli
+```
+
+### Build Guts js files
+
+After cloning this repo, run the following commands in your Guts repo.
 
 ```shell
 npm install
-node_modules/.bin/coffee -o dist -c guts.coffee
-cp dist/guts.js dist/`npm ll | grep ^guts | sed 's/@/-/'`.js
+grunt
 ```
+
+### Creating a new version of Guts
+
+```shell
+./build
+```
+
