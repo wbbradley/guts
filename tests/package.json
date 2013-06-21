@@ -1,0 +1,8 @@
+{
+	"name": "guts-tests",
+	"version": "0.0.1",
+	"dependencies": {
+		"jquery": "~1.8.3",
+		"http-server": "~0.5.3" 
+	}
+}
