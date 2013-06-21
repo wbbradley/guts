@@ -138,7 +138,7 @@ class CompositeModelView extends Backbone.View
 
   rerender: =>
     @_rendered = false
-    do @render
+    @render()
 
   initialize: (options) =>
     @options = options
@@ -207,16 +207,10 @@ class CompositeModelForm extends CompositeModelView
     @timer = window.setTimeout @save, 2000
 
   events: =>
-    form_events =
-      'submit form': 'submitted'
-      'keyup input': 'keyup'
-      'keyup textarea': 'keyup'
-      'change input[type=file]': 'file_chosen'
-    if @extra_events
-      form_events = _.extend(form_events, _.result(@, 'extra_events'))
-    if @options.extra_events
-      form_events = _.extend(form_events, _.result(@options, 'extra_events'))
-    form_events
+    'submit form': 'submitted'
+    'keyup input': 'keyup'
+    'keyup textarea': 'keyup'
+    'change input[type=file]': 'file_chosen'
   
 
 class ModelFieldView extends Backbone.View
@@ -288,8 +282,7 @@ class BaseCollectionView extends Backbone.View
 
 
   remove: (model) =>
-    # REVIEW(will): check that where is not a lodash-only-ism
-    viewToRemove = _.findWhere @_child_views, {model: model}
+    viewToRemove = _.find @_child_views, (item) -> item.model is model
     if not typeof viewToRemove is 'object'
       throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model #{model.cid}"
     # remove the view from our child views

@@ -331,20 +331,12 @@
     };
 
     CompositeModelForm.prototype.events = function() {
-      var form_events;
-      form_events = {
+      return {
         'submit form': 'submitted',
         'keyup input': 'keyup',
         'keyup textarea': 'keyup',
         'change input[type=file]': 'file_chosen'
       };
-      if (this.extra_events) {
-        form_events = _.extend(form_events, _.result(this, 'extra_events'));
-      }
-      if (this.options.extra_events) {
-        form_events = _.extend(form_events, _.result(this.options, 'extra_events'));
-      }
-      return form_events;
     };
 
     return CompositeModelForm;
@@ -462,8 +454,8 @@
 
     BaseCollectionView.prototype.remove = function(model) {
       var viewToRemove;
-      viewToRemove = _.findWhere(this._child_views, {
-        model: model
+      viewToRemove = _.find(this._child_views, function(item) {
+        return item.model === model;
       });
       if (!typeof viewToRemove === 'object') {
         throw "BaseCollectionView : error : couldn\'t find view to remove from collection corresponding to model " + model.cid;
