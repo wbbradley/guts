@@ -37,6 +37,26 @@ window.runTests = ->
 				$new_title = $element.children('#bmvsm-title').text()
 				expect(new_title).toEqual($new_title)
 
+		describe "Render Once Set to True", ->
+			$element = $("<div class='guts-basicmodelview-single-model-test'></div>")
+			$('body').append($element)
+
+			model = new TestBasicModelViewModel
+				title: 'Test Model'
+			view = new TestBasicModelView
+				className: 'guts-basicmodelview-single-model-test'
+				model: model
+				el: $element
+				render_once: true
+
+			it "Doesn't rerender when the model is changed", ->
+				original_title = model.get('title')
+				model.set('title', "I am a different title!")
+				console.log $element.children().text()
+				$current_title = $element.children('#bmvsm-title').text()
+				expect(original_title).toEqual($current_title)
+				$element.empty()
+
 		describe "Multiple Models", ->
 			$element = $("<div class='guts-basicmodelview-multiple-model-test'></div>")
 			$('body').append($element)
@@ -54,7 +74,6 @@ window.runTests = ->
 						second_model: @model_two
 
 			it "Renders to the page", ->
-				console.log $element.children()
 				first_title = $element.children('#bmvmm-first-model-title').text()
 				second_title = $element.children('#bmvmm-second-model-title').text()
 				expect(first_title).toEqual(@model_one.get('title'))
