@@ -1,4 +1,17 @@
 language: node_js
- node_js:
+node_js:
    - "0.10"
    - "0.8"
+before_install:
+   - "npm install -g grunt-cli"
+   - "cd tests/lib/jquery"
+   - "npm install"
+   - "grunt"
+   - "cd ../../"
+   - "npm install"
+   - "mkdir gen"
+   - "coffee -o gen -c src"
+   - "coffee -o gen -c ../src/guts.coffee"
+   - "http-server &"
+   - sleep 3
+script: coffee check_test.coffee

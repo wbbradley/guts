@@ -1,3 +1,4 @@
+#####
 ###
 #    Guts Framework for Backbone views
 ###
@@ -7,18 +8,6 @@
 # Basic render strategy:
 # http://ianstormtaylor.com/rendering-views-in-backbonejs-isnt-always-simple/
 verbose = false
-
-handlebars_render = (template_name, context) ->
-  template = App.Handlebars[template_name]
-  if template
-    if verbose
-      console.log "Rendering template '#{template_name}'"
-    output = template context
-    return output
-  else
-    throw "handlebars_render : error : couldn't find template '#{template_name}'"
-
-render = handlebars_render
 
 isDescendant = (parent, child) ->
   node = child.parentNode
@@ -56,7 +45,7 @@ class BasicModelView extends Backbone.View
         model: @model.toJSON()
         cid: @model.cid
         url: @model.url
-    template_result = render @get_template(), context
+    template_result = Guts.render @get_template(), context
     @$el.html(template_result)
     @
 
@@ -139,7 +128,7 @@ class CompositeModelView extends Backbone.View
         url: @model.url
 
     @_rendered = true
-    template_result = render do @get_template, context
+    template_result = Guts.render do @get_template, context
     orphans = @$el.children().detach()
     @$el.html(template_result)
 
@@ -229,7 +218,7 @@ class ModelFieldView extends Backbone.View
     value = @options.model.get(@options.property)
     context = {}
     context[@options.property] = value
-    template_result = render @get_template(), context
+    template_result = Guts.render @get_template(), context
     @$el.html(template_result)
     @
 
@@ -276,7 +265,7 @@ class BaseCollectionView extends Backbone.View
       if typeof comparator is 'string'
         comparator_string = comparator
         comparator = (model) => model.get comparator_string
-      else
+      if typeof comparator is not 'function'
         throw "Guts : error : BaseCollectionView only understands function or string comparators"
       index = @collection.sortedIndex model, comparator
     else
@@ -311,5 +300,14 @@ class Guts
   @CompositeModelForm: CompositeModelForm
   @BaseCollectionView: BaseCollectionView
   @ModelFieldView:     ModelFieldView
+  @render: (template_name, context) ->
+    template = App.Handlebars[template_name]
+    if template
+      if verbose
+        console.log "Rendering template '#{template_name}'"
+      output = template context
+      return output
+    else
+      throw "handlebars_render : error : couldn't find template '#{template_name}'"
 
 @Guts = Guts
