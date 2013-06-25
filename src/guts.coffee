@@ -265,7 +265,7 @@ class BaseCollectionView extends Backbone.View
       if typeof comparator is 'string'
         comparator_string = comparator
         comparator = (model) => model.get comparator_string
-      if typeof comparator is not 'function'
+      if typeof comparator isnt 'function'
         throw "Guts : error : BaseCollectionView only understands function or string comparators"
       index = @collection.sortedIndex model, comparator
     else
