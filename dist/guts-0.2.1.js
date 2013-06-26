@@ -7,28 +7,12 @@
 
 
 (function() {
-  var BaseCollectionView, BasicModelView, CompositeModelForm, CompositeModelView, Guts, ModelFieldView, handlebars_render, isDescendant, moveChildren, render, verbose, _ref, _ref1, _ref2, _ref3, _ref4,
+  var BaseCollectionView, BasicModelView, CompositeModelForm, CompositeModelView, Guts, ModelFieldView, isDescendant, moveChildren, verbose, _ref, _ref1, _ref2, _ref3, _ref4,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   verbose = false;
-
-  handlebars_render = function(template_name, context) {
-    var output, template;
-    template = App.Handlebars[template_name];
-    if (template) {
-      if (verbose) {
-        console.log("Rendering template '" + template_name + "'");
-      }
-      output = template(context);
-      return output;
-    } else {
-      throw "handlebars_render : error : couldn't find template '" + template_name + "'";
-    }
-  };
-
-  render = handlebars_render;
 
   isDescendant = function(parent, child) {
     var node;
@@ -90,7 +74,7 @@
           url: this.model.url
         };
       }
-      template_result = render(this.get_template(), context);
+      template_result = Guts.render(this.get_template(), context);
       this.$el.html(template_result);
       return this;
     };
@@ -209,7 +193,7 @@
         };
       }
       this._rendered = true;
-      template_result = render(this.get_template(), context);
+      template_result = Guts.render(this.get_template(), context);
       orphans = this.$el.children().detach();
       this.$el.html(template_result);
       this.reassign_child_views();
@@ -358,7 +342,7 @@
       value = this.options.model.get(this.options.property);
       context = {};
       context[this.options.property] = value;
-      template_result = render(this.get_template(), context);
+      template_result = Guts.render(this.get_template(), context);
       this.$el.html(template_result);
       return this;
     };
@@ -435,7 +419,8 @@
           comparator = function(model) {
             return model.get(comparator_string);
           };
-        } else {
+        }
+        if (typeof comparator === !'function') {
           throw "Guts : error : BaseCollectionView only understands function or string comparators";
         }
         index = this.collection.sortedIndex(model, comparator);
@@ -486,6 +471,20 @@
     Guts.BaseCollectionView = BaseCollectionView;
 
     Guts.ModelFieldView = ModelFieldView;
+
+    Guts.render = function(template_name, context) {
+      var output, template;
+      template = App.Handlebars[template_name];
+      if (template) {
+        if (verbose) {
+          console.log("Rendering template '" + template_name + "'");
+        }
+        output = template(context);
+        return output;
+      } else {
+        throw "handlebars_render : error : couldn't find template '" + template_name + "'";
+      }
+    };
 
     return Guts;
 
