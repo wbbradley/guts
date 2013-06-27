@@ -45,7 +45,8 @@ class BasicModelView extends Backbone.View
         model: @model.toJSON()
         cid: @model.cid
         url: @model.url
-    template_result = Guts.render @get_template(), context
+    helpers = (_.result @options, 'helpers') or (_.result @, 'helpers')
+    template_result = Guts.render @get_template(), context, helpers
     @$el.html(template_result)
     @
 
@@ -128,7 +129,8 @@ class CompositeModelView extends Backbone.View
         url: @model.url
 
     @_rendered = true
-    template_result = Guts.render do @get_template, context
+    helpers = (_.result @options, 'helpers') or (_.result @, 'helpers')
+    template_result = Guts.render @get_template(), context, helpers
     orphans = @$el.children().detach()
     @$el.html(template_result)
 
@@ -206,10 +208,22 @@ class CompositeModelForm extends CompositeModelView
       window.clearTimeout(@timer)
     @timer = window.setTimeout @save, 2000
 
+  change_select: =>
+    data = Backbone.Syphon.serialize(@)
+    @model.set data
+
+    @rerender()
+
+    if @timer
+      window.clearTimeout(@timer)
+    @timer = window.setTimeout @save, 2000
+
   events: =>
     'submit form': 'submitted'
     'keyup input': 'keyup'
+    'change input': 'keyup'
     'keyup textarea': 'keyup'
+    'change select': 'change_select'
     'change input[type=file]': 'file_chosen'
   
 
@@ -218,7 +232,8 @@ class ModelFieldView extends Backbone.View
     value = @options.model.get(@options.property)
     context = {}
     context[@options.property] = value
-    template_result = Guts.render @get_template(), context
+    helpers = (_.result @options, 'helpers') or (_.result @, 'helpers')
+    template_result = Guts.render @get_template(), context, helpers
     @$el.html(template_result)
     @
 
@@ -300,12 +315,13 @@ class Guts
   @CompositeModelForm: CompositeModelForm
   @BaseCollectionView: BaseCollectionView
   @ModelFieldView:     ModelFieldView
-  @render: (template_name, context) ->
+  @render: (template_name, context, helpers) ->
     template = App.Handlebars[template_name]
     if template
       if verbose
         console.log "Rendering template '#{template_name}'"
-      output = template context
+      output = template context,
+        helpers: _.defaults {}, helpers, Handlebars.helpers
       return output
     else
       throw "handlebars_render : error : couldn't find template '#{template_name}'"
