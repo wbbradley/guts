@@ -127,7 +127,8 @@ class CompositeModelView extends Backbone.View
         model: @model.toJSON()
         cid: @model.cid
         url: @model.url
-
+    extra_context = (_.result @options, 'context') or (_.result @, 'context')
+    _.extend context, extra_context
     @_rendered = true
     helpers = (_.result @options, 'helpers') or (_.result @, 'helpers')
     template_result = Guts.render @get_template(), context, helpers
@@ -169,10 +170,10 @@ class CompositeModelForm extends CompositeModelView
     if options.models
       throw 'CompositeModelForm : error : forms do not support multiple associated models'
     super
-    if not @model.has('url')
-      @listenToOnce @model, 'change', @rerender
+    @listenTo @model, 'change', @rerender
 
   save: =>
+    @_stop_listening()
     @listenToOnce @model, 'sync', =>
       if verbose
         console.log 'save succeeded'
@@ -183,7 +184,12 @@ class CompositeModelForm extends CompositeModelView
     @save()
     return false
 
+  _stop_listening: =>
+    @stopListening @model, 'change'
+
   file_chosen: (e) =>
+    @_stop_listening()
+
     # https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
     if typeof @model.set_file_field isnt 'function'
       console.log 'Guts.CompositeModelForm : warning : file inputs can be handled using Backbone.FormDataTransport.Model associated with this CompositeModelForm'
@@ -201,6 +207,8 @@ class CompositeModelForm extends CompositeModelView
 
 
   keyup: (e) =>
+    @_stop_listening()
+
     data = Backbone.Syphon.serialize(@)
     @model.set data
 
@@ -213,6 +221,7 @@ class CompositeModelForm extends CompositeModelView
     @model.set data
 
     @rerender()
+    @_stop_listening()
 
     if @timer
       window.clearTimeout(@timer)
@@ -270,11 +279,14 @@ class BaseCollectionView extends Backbone.View
     @listenTo @collection, 'add', @add
     @listenTo @collection, 'remove', @remove
     @render()
-
  
   add: (model) =>
-    childView = new @options.item_view_class
-      model: model
+    item_options = {}
+    item_options.model = model
+    if @options?.item_options
+      _.extend item_options, _.result @.options, 'item_options'
+    childView = new @options.item_view_class item_options
+
     comparator = @collection.comparator or @options.comparator or @comparator
     if comparator
       if typeof comparator is 'string'
@@ -295,7 +307,6 @@ class BaseCollectionView extends Backbone.View
       el = @$el.append(childEl)
     @_child_views.splice index, 0, childView
 
-
   remove: (model) =>
     viewToRemove = _.find @_child_views, (item) -> item.model is model
     if not typeof viewToRemove is 'object'
@@ -307,6 +318,65 @@ class BaseCollectionView extends Backbone.View
   at: (index) =>
     return @_child_views[index]
 
+class MultiCollection extends Backbone.Collection
+  initialize: =>
+    @index = {}
+
+    for collection in options?.collections or []
+      @addCollection(collection)
+
+  addCollection: (collection) =>
+    # for each collection add its items to our aggregated list
+    collection.forEach (model) ->
+      @addRelatedItem model
+    @listenTo collection, 'add', @addRelatedItem
+    @listenTo collection, 'remove', @removeRelatedItem
+    return
+
+  removeCollection: (collection) =>
+    # for each collection add its items to our aggregated list
+    collection.forEach (model) ->
+      @removeRelatedItem model
+    @stopListening collection, 'add'
+    @stopListening collection, 'remove'
+    return
+
+  addRelatedItem: (model) =>
+    key = model.id or model.get('id')
+    if not key
+      @listenToOnce model, 'sync', => @addRelatedItem model
+    else
+      # see if this model is in our list already
+      if key of @index
+        # this model already exists, bump its counter
+        @index[key].count += 1
+      else
+        # this is a new model we don't yet know about
+        @index[key] =
+          model: model
+          count: 1
+        @add model
+    return
+
+  removeRelatedItem: (model) ->
+    key = model.id or model.get('id')
+    if not key
+      @stopListening model, 'sync'
+    else
+      if key of @index
+        existing = @index[key]
+        if existing.count is 1
+          # remove this item
+          @remove existing.model
+          delete @index[key]
+        else
+          existing.count -= 1
+    return
+
+if Backbone.MultiCollection
+  console.log 'Guts : warning : someone has already installed a Backbone.MultiCollection'
+else
+  Backbone.MultiCollection = MultiCollection
 
 # Export Guts
 class Guts

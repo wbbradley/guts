@@ -7,7 +7,7 @@
 
 
 (function() {
-  var BaseCollectionView, BasicModelView, CompositeModelForm, CompositeModelView, Guts, ModelFieldView, isDescendant, moveChildren, verbose, _ref, _ref1, _ref2, _ref3, _ref4,
+  var BaseCollectionView, BasicModelView, CompositeModelForm, CompositeModelView, Guts, ModelFieldView, MultiCollection, isDescendant, moveChildren, verbose, _ref, _ref1, _ref2, _ref3, _ref4, _ref5,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -54,7 +54,7 @@
     };
 
     BasicModelView.prototype.render = function() {
-      var context, model, model_name, template_result, _ref1;
+      var context, helpers, model, model_name, template_result, _ref1;
       if (this.options.models) {
         context = {};
         _ref1 = this.options.models;
@@ -74,7 +74,8 @@
           url: this.model.url
         };
       }
-      template_result = Guts.render(this.get_template(), context);
+      helpers = (_.result(this.options, 'helpers')) || (_.result(this, 'helpers'));
+      template_result = Guts.render(this.get_template(), context, helpers);
       this.$el.html(template_result);
       return this;
     };
@@ -169,7 +170,7 @@
     };
 
     CompositeModelView.prototype.render = function() {
-      var context, model, model_name, orphans, template_result, _ref2;
+      var context, extra_context, helpers, model, model_name, orphans, template_result, _ref2;
       if (this._rendered) {
         return this;
       }
@@ -192,8 +193,11 @@
           url: this.model.url
         };
       }
+      extra_context = (_.result(this.options, 'context')) || (_.result(this, 'context'));
+      _.extend(context, extra_context);
       this._rendered = true;
-      template_result = Guts.render(this.get_template(), context);
+      helpers = (_.result(this.options, 'helpers')) || (_.result(this, 'helpers'));
+      template_result = Guts.render(this.get_template(), context, helpers);
       orphans = this.$el.children().detach();
       this.$el.html(template_result);
       this.reassign_child_views();
@@ -247,8 +251,10 @@
 
     function CompositeModelForm() {
       this.events = __bind(this.events, this);
+      this.change_select = __bind(this.change_select, this);
       this.keyup = __bind(this.keyup, this);
       this.file_chosen = __bind(this.file_chosen, this);
+      this._stop_listening = __bind(this._stop_listening, this);
       this.submitted = __bind(this.submitted, this);
       this.save = __bind(this.save, this);
       this.initialize = __bind(this.initialize, this);
@@ -261,13 +267,12 @@
         throw 'CompositeModelForm : error : forms do not support multiple associated models';
       }
       CompositeModelForm.__super__.initialize.apply(this, arguments);
-      if (!this.model.has('url')) {
-        return this.listenToOnce(this.model, 'change', this.rerender);
-      }
+      return this.listenTo(this.model, 'change', this.rerender);
     };
 
     CompositeModelForm.prototype.save = function() {
       var _this = this;
+      this._stop_listening();
       this.listenToOnce(this.model, 'sync', function() {
         if (verbose) {
           return console.log('save succeeded');
@@ -282,8 +287,13 @@
       return false;
     };
 
+    CompositeModelForm.prototype._stop_listening = function() {
+      return this.stopListening(this.model, 'change');
+    };
+
     CompositeModelForm.prototype.file_chosen = function(e) {
       var file, file_element, _i, _j, _len, _len1, _ref3, _ref4;
+      this._stop_listening();
       if (typeof this.model.set_file_field !== 'function') {
         console.log('Guts.CompositeModelForm : warning : file inputs can be handled using Backbone.FormDataTransport.Model associated with this CompositeModelForm');
         return;
@@ -306,8 +316,21 @@
 
     CompositeModelForm.prototype.keyup = function(e) {
       var data;
+      this._stop_listening();
       data = Backbone.Syphon.serialize(this);
       this.model.set(data);
+      if (this.timer) {
+        window.clearTimeout(this.timer);
+      }
+      return this.timer = window.setTimeout(this.save, 2000);
+    };
+
+    CompositeModelForm.prototype.change_select = function() {
+      var data;
+      data = Backbone.Syphon.serialize(this);
+      this.model.set(data);
+      this.rerender();
+      this._stop_listening();
       if (this.timer) {
         window.clearTimeout(this.timer);
       }
@@ -318,7 +341,9 @@
       return {
         'submit form': 'submitted',
         'keyup input': 'keyup',
+        'change input': 'keyup',
         'keyup textarea': 'keyup',
+        'change select': 'change_select',
         'change input[type=file]': 'file_chosen'
       };
     };
@@ -338,11 +363,12 @@
     }
 
     ModelFieldView.prototype.render = function() {
-      var context, template_result, value;
+      var context, helpers, template_result, value;
       value = this.options.model.get(this.options.property);
       context = {};
       context[this.options.property] = value;
-      template_result = Guts.render(this.get_template(), context);
+      helpers = (_.result(this.options, 'helpers')) || (_.result(this, 'helpers'));
+      template_result = Guts.render(this.get_template(), context, helpers);
       this.$el.html(template_result);
       return this;
     };
@@ -407,11 +433,14 @@
     };
 
     BaseCollectionView.prototype.add = function(model) {
-      var childEl, childView, comparator, comparator_string, el, index, referenceEl,
+      var childEl, childView, comparator, comparator_string, el, index, item_options, referenceEl, _ref5,
         _this = this;
-      childView = new this.options.item_view_class({
-        model: model
-      });
+      item_options = {};
+      item_options.model = model;
+      if ((_ref5 = this.options) != null ? _ref5.item_options : void 0) {
+        _.extend(item_options, _.result(this.options, 'item_options'));
+      }
+      childView = new this.options.item_view_class(item_options);
       comparator = this.collection.comparator || this.options.comparator || this.comparator;
       if (comparator) {
         if (typeof comparator === 'string') {
@@ -420,7 +449,7 @@
             return model.get(comparator_string);
           };
         }
-        if (typeof comparator === !'function') {
+        if (typeof comparator !== 'function') {
           throw "Guts : error : BaseCollectionView only understands function or string comparators";
         }
         index = this.collection.sortedIndex(model, comparator);
@@ -459,6 +488,95 @@
 
   })(Backbone.View);
 
+  MultiCollection = (function(_super) {
+    __extends(MultiCollection, _super);
+
+    function MultiCollection() {
+      this.addRelatedItem = __bind(this.addRelatedItem, this);
+      this.removeCollection = __bind(this.removeCollection, this);
+      this.addCollection = __bind(this.addCollection, this);
+      this.initialize = __bind(this.initialize, this);
+      _ref5 = MultiCollection.__super__.constructor.apply(this, arguments);
+      return _ref5;
+    }
+
+    MultiCollection.prototype.initialize = function() {
+      var collection, _i, _len, _ref6, _results;
+      this.index = {};
+      _ref6 = (typeof options !== "undefined" && options !== null ? options.collections : void 0) || [];
+      _results = [];
+      for (_i = 0, _len = _ref6.length; _i < _len; _i++) {
+        collection = _ref6[_i];
+        _results.push(this.addCollection(collection));
+      }
+      return _results;
+    };
+
+    MultiCollection.prototype.addCollection = function(collection) {
+      collection.forEach(function(model) {
+        return this.addRelatedItem(model);
+      });
+      this.listenTo(collection, 'add', this.addRelatedItem);
+      this.listenTo(collection, 'remove', this.removeRelatedItem);
+    };
+
+    MultiCollection.prototype.removeCollection = function(collection) {
+      collection.forEach(function(model) {
+        return this.removeRelatedItem(model);
+      });
+      this.stopListening(collection, 'add');
+      this.stopListening(collection, 'remove');
+    };
+
+    MultiCollection.prototype.addRelatedItem = function(model) {
+      var key,
+        _this = this;
+      key = model.id || model.get('id');
+      if (!key) {
+        this.listenToOnce(model, 'sync', function() {
+          return _this.addRelatedItem(model);
+        });
+      } else {
+        if (key in this.index) {
+          this.index[key].count += 1;
+        } else {
+          this.index[key] = {
+            model: model,
+            count: 1
+          };
+          this.add(model);
+        }
+      }
+    };
+
+    MultiCollection.prototype.removeRelatedItem = function(model) {
+      var existing, key;
+      key = model.id || model.get('id');
+      if (!key) {
+        this.stopListening(model, 'sync');
+      } else {
+        if (key in this.index) {
+          existing = this.index[key];
+          if (existing.count === 1) {
+            this.remove(existing.model);
+            delete this.index[key];
+          } else {
+            existing.count -= 1;
+          }
+        }
+      }
+    };
+
+    return MultiCollection;
+
+  })(Backbone.Collection);
+
+  if (Backbone.MultiCollection) {
+    console.log('Guts : warning : someone has already installed a Backbone.MultiCollection');
+  } else {
+    Backbone.MultiCollection = MultiCollection;
+  }
+
   Guts = (function() {
     function Guts() {}
 
@@ -472,14 +590,16 @@
 
     Guts.ModelFieldView = ModelFieldView;
 
-    Guts.render = function(template_name, context) {
+    Guts.render = function(template_name, context, helpers) {
       var output, template;
       template = App.Handlebars[template_name];
       if (template) {
         if (verbose) {
           console.log("Rendering template '" + template_name + "'");
         }
-        output = template(context);
+        output = template(context, {
+          helpers: _.defaults({}, helpers, Handlebars.helpers)
+        });
         return output;
       } else {
         throw "handlebars_render : error : couldn't find template '" + template_name + "'";
