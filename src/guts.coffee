@@ -1,14 +1,6 @@
-#####
-###
 #    Guts Framework for Backbone views
-###
-#
-# Handling subviews:
-# http://stackoverflow.com/questions/9337927/how-to-handle-initializing-and-rendering-subviews-in-backbone-js
-# Basic render strategy:
-# http://ianstormtaylor.com/rendering-views-in-backbonejs-isnt-always-simple/
-verbose = false
 
+# A helper function used in sanity testing the child view reassignment strategy
 isDescendant = (parent, child) ->
   node = child.parentNode
   while node isnt null
@@ -17,6 +9,8 @@ isDescendant = (parent, child) ->
     node = node.parentNode
   false
 
+# A helper function used to transfer child nodes from within an orphaned DOM
+# element to its new home in its parent's DOM tree.
 moveChildren = (elFrom, elTo) ->
   if elTo.childNodes.length
     throw 'moveChildren : error : destination tag should not have any children'
@@ -25,11 +19,22 @@ moveChildren = (elFrom, elTo) ->
     elTo.appendChild elFrom.childNodes[0]
 
 
-# BasicModelView always updates and is therefore only OK for basic templates
-# that are not nested or involving forms.
+# BasicModelView is a simple, always-up-to-date view that knows how to
+# render itself given a template or className. All Model based Views in Guts
+# will attempt to render using their prescribed template.
+# @example
+#   view = new BasicModelView
+#     model: myModel
+#     template: 'my-template'
+#     el: $('#my-model')
+# It should not be necessary to call any methods on BasicModelView, except the
+# constructor.
 class BasicModelView extends Backbone.View
+  # returns the name of the template to pass to
+  # Guts.render at render stime. Template path resolution checks the following
+  # locations in order: @options.template, @template, @className.
   get_template: =>
-    @options.template or @template or @className
+      @options.template or @template or @className
 
   render: =>
     if @options.models
@@ -50,6 +55,7 @@ class BasicModelView extends Backbone.View
     @$el.html(template_result)
     @
 
+  # @param [options] options can contain 'model', or 'models', as well as 'template'. See Backbone.View for more options.
   initialize: (options) =>
     @options = options
     @render()
@@ -174,9 +180,6 @@ class CompositeModelForm extends CompositeModelView
 
   save: =>
     @_stop_listening()
-    @listenToOnce @model, 'sync', =>
-      if verbose
-        console.log 'save succeeded'
     @model.save()
 
   submitted: (e) =>
@@ -388,8 +391,6 @@ class Guts
   @render: (template_name, context, helpers) ->
     template = App.Handlebars[template_name]
     if template
-      if verbose
-        console.log "Rendering template '#{template_name}'"
       output = template context,
         helpers: _.defaults {}, helpers, Handlebars.helpers
       return output
