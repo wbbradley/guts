@@ -232,6 +232,7 @@ class CompositeModelForm extends CompositeModelView
 
   events: =>
     'submit form': 'submitted'
+    'keyup [contenteditable]': '_stop_listening'
     'keyup input': 'keyup'
     'change input': 'keyup'
     'keyup textarea': 'keyup'
