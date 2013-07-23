@@ -68,6 +68,7 @@ class BasicModelView extends Backbone.View
   
 class CompositeModelView extends Backbone.View
   _rendered: false
+  _fadedIn: true
 
   get_template: =>
     template = @template or @options.template or @className
@@ -141,6 +142,19 @@ class CompositeModelView extends Backbone.View
     orphans = @$el.children().detach()
     @$el.html(template_result)
 
+    if not @_fadedIn and @options.fadeIn
+      #@el.style.opacity = 0
+      @el.style['background-color'] = 'lightyellow'
+      @el.style['transition'] = 'opacity 1500ms, background-color 2000ms'
+      resetStyle = () =>
+        @el.style.opacity = 1
+        @el.style['background-color'] = 'white'
+      computed_style = window.getComputedStyle(@el)
+      computed_style.opacity
+      computed_style['background-color']
+      resetStyle()
+      @_fadedIn = true
+
     # Put the children back in their place
     @reassign_child_views()
     @
@@ -153,6 +167,8 @@ class CompositeModelView extends Backbone.View
     @options = options
     template = @get_template()
     @_child_views = []
+    if @options.fadeIn
+      @_fadedIn = false
     @render()
     for binding, view of _.result(@options, 'child_views') or _.result(@, 'child_views')
       view = if typeof view is 'function' then view() else view
