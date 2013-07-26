@@ -268,7 +268,6 @@
       this.file_chosen = __bind(this.file_chosen, this);
       this._stop_listening = __bind(this._stop_listening, this);
       this.submitted = __bind(this.submitted, this);
-      this.save = __bind(this.save, this);
       this.initialize = __bind(this.initialize, this);
       _ref2 = CompositeModelForm.__super__.constructor.apply(this, arguments);
       return _ref2;
@@ -282,14 +281,10 @@
       return this.listenTo(this.model, 'change', this.rerender);
     };
 
-    CompositeModelForm.prototype.save = function() {
-      this._stop_listening();
-      return this.model.save();
-    };
-
     CompositeModelForm.prototype.submitted = function(e) {
       e.preventDefault();
-      this.save();
+      this._stop_listening();
+      this.model.save();
       return false;
     };
 
@@ -324,11 +319,7 @@
       var data;
       this._stop_listening();
       data = Backbone.Syphon.serialize(this);
-      this.model.set(data);
-      if (this.timer) {
-        window.clearTimeout(this.timer);
-      }
-      return this.timer = window.setTimeout(this.save, 2000);
+      return this.model.set(data);
     };
 
     CompositeModelForm.prototype.change_select = function() {
@@ -336,11 +327,7 @@
       data = Backbone.Syphon.serialize(this);
       this.model.set(data);
       this.rerender();
-      this._stop_listening();
-      if (this.timer) {
-        window.clearTimeout(this.timer);
-      }
-      return this.timer = window.setTimeout(this.save, 2000);
+      return this._stop_listening();
     };
 
     CompositeModelForm.prototype.events = function() {

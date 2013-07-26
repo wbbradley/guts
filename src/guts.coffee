@@ -194,13 +194,10 @@ class CompositeModelForm extends CompositeModelView
     super
     @listenTo @model, 'change', @rerender
 
-  save: =>
-    @_stop_listening()
-    @model.save()
-
   submitted: (e) =>
     e.preventDefault()
-    @save()
+    @_stop_listening()
+    @model.save()
     return false
 
   _stop_listening: =>
@@ -231,20 +228,12 @@ class CompositeModelForm extends CompositeModelView
     data = Backbone.Syphon.serialize(@)
     @model.set data
 
-    if @timer
-      window.clearTimeout(@timer)
-    @timer = window.setTimeout @save, 2000
-
   change_select: =>
     data = Backbone.Syphon.serialize(@)
     @model.set data
 
     @rerender()
     @_stop_listening()
-
-    if @timer
-      window.clearTimeout(@timer)
-    @timer = window.setTimeout @save, 2000
 
   events: =>
     'submit form': 'submitted'
