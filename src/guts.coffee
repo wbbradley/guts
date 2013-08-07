@@ -59,6 +59,7 @@ class BasicModelView extends Backbone.View
   initialize: (options) =>
     @options = options
     @render()
+
     if not (@render_once or @options.render_once)
       if @options.models
         for model_name, model of @options.models
@@ -179,7 +180,17 @@ class CompositeModelView extends Backbone.View
       @_child_views.push view
     delete @child_views
     @reassign_child_views()
-    if (@render_on_change or @options.render_on_change)
+
+    render_when = @options.render_when or @render_when
+    if render_when
+      if not _.isArray render_when
+        render_when = [render_when]
+
+      for event_name in render_when
+        console.log "Listening to #{event_name}"
+        @listenTo @model, event_name, @rerender
+
+    if @render_on_change or @options.render_on_change
       if @options.models
         for model_name, model of @options.models
           @listenTo model, 'change', @rerender

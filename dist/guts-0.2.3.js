@@ -219,7 +219,7 @@
     };
 
     CompositeModelView.prototype.initialize = function(options) {
-      var binding, model, model_name, template, view, _ref2, _ref3;
+      var binding, event_name, model, model_name, render_when, template, view, _i, _len, _ref2, _ref3;
       this.options = options;
       template = this.get_template();
       this._child_views = [];
@@ -240,6 +240,17 @@
       }
       delete this.child_views;
       this.reassign_child_views();
+      render_when = this.options.render_when || this.render_when;
+      if (render_when) {
+        if (!_.isArray(render_when)) {
+          render_when = [render_when];
+        }
+        for (_i = 0, _len = render_when.length; _i < _len; _i++) {
+          event_name = render_when[_i];
+          console.log("Listening to " + event_name);
+          this.listenTo(this.model, event_name, this.rerender);
+        }
+      }
       if (this.render_on_change || this.options.render_on_change) {
         if (this.options.models) {
           _ref3 = this.options.models;
