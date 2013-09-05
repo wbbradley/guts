@@ -131,6 +131,7 @@
       }
       placeholder = $placeholder[0];
       if (!placeholder) {
+        console.log("CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '" + selector + "'");
         throw "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '" + selector + "'";
       }
       if (placeholder.children.length !== 0) {
@@ -219,7 +220,7 @@
     };
 
     CompositeModelView.prototype.initialize = function(options) {
-      var binding, event_name, model, model_name, render_when, template, view, _i, _len, _ref2, _ref3;
+      var $dynoViewEls, binding, childViews, dynoView, dynoViewEl, event_name, fieldName, fieldType, model, model_name, render_when, template, view, _i, _j, _len, _len1, _ref2;
       this.options = options;
       template = this.get_template();
       this._child_views = [];
@@ -227,9 +228,23 @@
         this._fadedIn = false;
       }
       this.render();
-      _ref2 = _.result(this.options, 'child_views') || _.result(this, 'child_views');
-      for (binding in _ref2) {
-        view = _ref2[binding];
+      childViews = (_.result(this.options, 'child_views') || _.result(this, 'child_views')) || {};
+      $dynoViewEls = this.$('[data-guts-field]');
+      for (_i = 0, _len = $dynoViewEls.length; _i < _len; _i++) {
+        dynoViewEl = $dynoViewEls[_i];
+        fieldName = dynoViewEl.getAttribute('data-guts-field');
+        fieldType = dynoViewEl.getAttribute('data-guts-type') || 'text';
+        dynoView = new Guts.ModelFieldView({
+          model: this.model,
+          property: fieldName,
+          unescaped: fieldType === 'raw',
+          className: dynoViewEl.getAttribute('class'),
+          tagName: dynoViewEl.tagName
+        });
+        childViews["dyno_" + fieldName + "_" + dynoView.cid] = dynoView;
+      }
+      for (binding in childViews) {
+        view = childViews[binding];
         view = typeof view === 'function' ? view() : view;
         if (!view.className) {
           console.log("CompositeModelView : error : child view '" + binding + "' must be initialized with a \'className\'");
@@ -245,17 +260,17 @@
         if (!_.isArray(render_when)) {
           render_when = [render_when];
         }
-        for (_i = 0, _len = render_when.length; _i < _len; _i++) {
-          event_name = render_when[_i];
+        for (_j = 0, _len1 = render_when.length; _j < _len1; _j++) {
+          event_name = render_when[_j];
           console.log("Listening to " + event_name);
           this.listenTo(this.model, event_name, this.rerender);
         }
       }
       if (this.render_on_change || this.options.render_on_change) {
         if (this.options.models) {
-          _ref3 = this.options.models;
-          for (model_name in _ref3) {
-            model = _ref3[model_name];
+          _ref2 = this.options.models;
+          for (model_name in _ref2) {
+            model = _ref2[model_name];
             this.listenTo(model, 'change', this.rerender);
           }
         } else {
@@ -373,28 +388,21 @@
       context = {};
       context[this.options.property] = value;
       helpers = (_.result(this.options, 'helpers')) || (_.result(this, 'helpers'));
-      template_result = Guts.render(this.get_template(), context, helpers);
-      this.$el.html(template_result);
+      if (this.model.has(this.options.property)) {
+        template_result = this.model.get(this.options.property);
+      } else {
+        template_result = _.result(this.model, this.options.property);
+      }
+      if (!this.options.unescaped) {
+        this.$el.text(template_result);
+      } else {
+        this.$el.html(template_result);
+      }
       return this;
     };
 
     ModelFieldView.prototype.initialize = function(options) {
-      var _this = this;
       this.options = options;
-      if (!this.get_template()) {
-        this.render = function() {
-          var value;
-          value = _this.options.model.get(_this.options.property);
-          if (value) {
-            if (_this.options.unescaped) {
-              _this.$el.html(value);
-            } else {
-              _this.$el.html(_.escape(value));
-            }
-          }
-          return _this;
-        };
-      }
       if (this.options.is_form_field) {
         return this.listenToOnce(this.options.model, "change:" + this.options.property, this.render);
       } else {

@@ -89,6 +89,7 @@ class CompositeModelView extends Backbone.View
       throw "CompositeModelView : error : found too many placeholder elements when finding selector '#{selector}'"
     placeholder = $placeholder[0]
     if not placeholder
+      console.log "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '#{selector}'"
       throw "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '#{selector}'"
     if placeholder.children.length isnt 0
       throw "CompositeModelView : error : found a placeholder node (selector is '#{selector}') in your template that had children. Confused! Bailing out."
@@ -171,7 +172,21 @@ class CompositeModelView extends Backbone.View
     if @options.fadeIn
       @_fadedIn = false
     @render()
-    for binding, view of _.result(@options, 'child_views') or _.result(@, 'child_views')
+    childViews = (_.result(@options, 'child_views') or _.result(@, 'child_views')) or {}
+    $dynoViewEls = @$('[data-guts-field]')
+    for dynoViewEl in $dynoViewEls
+      fieldName = dynoViewEl.getAttribute 'data-guts-field'
+      fieldType = dynoViewEl.getAttribute('data-guts-type') or 'text'
+
+      dynoView = new Guts.ModelFieldView
+        model: @model
+        property: fieldName
+        unescaped: fieldType is 'raw'
+        className: dynoViewEl.getAttribute 'class'
+        tagName: dynoViewEl.tagName
+      childViews["dyno_#{fieldName}_#{dynoView.cid}"] = dynoView
+
+    for binding, view of childViews
       view = if typeof view is 'function' then view() else view
       if not view.className
         console.log "CompositeModelView : error : child view '#{binding}' must be initialized with a \'className\'"
@@ -262,21 +277,20 @@ class ModelFieldView extends Backbone.View
     context = {}
     context[@options.property] = value
     helpers = (_.result @options, 'helpers') or (_.result @, 'helpers')
-    template_result = Guts.render @get_template(), context, helpers
-    @$el.html(template_result)
+
+    if @model.has @options.property
+      template_result = @model.get @options.property
+    else
+      template_result = _.result @model, @options.property
+
+    if not @options.unescaped
+      @$el.text(template_result)
+    else
+      @$el.html(template_result)
     @
 
   initialize: (options) =>
     @options = options
-    if not @get_template()
-      @render = =>
-        value = @options.model.get(@options.property)
-        if value
-          if @options.unescaped
-            @$el.html(value)
-          else
-            @$el.html(_.escape value)
-        @
     if @options.is_form_field
       @listenToOnce @options.model, "change:#{@options.property}", @render
     else
