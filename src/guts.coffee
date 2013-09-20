@@ -89,8 +89,7 @@ class CompositeModelView extends Backbone.View
       throw "CompositeModelView : error : found too many placeholder elements when finding selector '#{selector}'"
     placeholder = $placeholder[0]
     if not placeholder
-      console.log "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '#{selector}'"
-      throw "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '#{selector}'"
+      return null
     if placeholder.children.length isnt 0
       throw "CompositeModelView : error : found a placeholder node (selector is '#{selector}') in your template that had children. Confused! Bailing out."
     return placeholder
@@ -104,17 +103,17 @@ class CompositeModelView extends Backbone.View
           throw 'CompositeModelView : error : orphans should not have a home'
 
         placeholder = @find_view_placeholder(@$el, view)
+        if placeholder
+          # get the children of the child view and move them into the new placeholder
+          moveChildren view.el, placeholder
 
-        # get the children of the child view and move them into the new placeholder
-        moveChildren view.el, placeholder
+          # make sure the child view knows its new home
+          view.setElement placeholder, true
 
-        # make sure the child view knows its new home
-        view.setElement placeholder, true
-
-        if not isDescendant(@el, view.el)
-          throw 'CompositeModelView : error : replaceChild didn\'t work as expected'
-        if view.$el[0] isnt view.el
-          throw 'CompositeModelView : error : $el is confused'
+          if not isDescendant(@el, view.el)
+            throw 'CompositeModelView : error : replaceChild didn\'t work as expected'
+          if view.$el[0] isnt view.el
+            throw 'CompositeModelView : error : $el is confused'
     return
      
   render: =>

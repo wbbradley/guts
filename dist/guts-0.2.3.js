@@ -131,8 +131,7 @@
       }
       placeholder = $placeholder[0];
       if (!placeholder) {
-        console.log("CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '" + selector + "'");
-        throw "CompositeModelView : error : couldn\'t find placeholder element to be replaced: selector = '" + selector + "'";
+        return null;
       }
       if (placeholder.children.length !== 0) {
         throw "CompositeModelView : error : found a placeholder node (selector is '" + selector + "') in your template that had children. Confused! Bailing out.";
@@ -153,13 +152,15 @@
             throw 'CompositeModelView : error : orphans should not have a home';
           }
           placeholder = this.find_view_placeholder(this.$el, view);
-          moveChildren(view.el, placeholder);
-          view.setElement(placeholder, true);
-          if (!isDescendant(this.el, view.el)) {
-            throw 'CompositeModelView : error : replaceChild didn\'t work as expected';
-          }
-          if (view.$el[0] !== view.el) {
-            throw 'CompositeModelView : error : $el is confused';
+          if (placeholder) {
+            moveChildren(view.el, placeholder);
+            view.setElement(placeholder, true);
+            if (!isDescendant(this.el, view.el)) {
+              throw 'CompositeModelView : error : replaceChild didn\'t work as expected';
+            }
+            if (view.$el[0] !== view.el) {
+              throw 'CompositeModelView : error : $el is confused';
+            }
           }
         }
       }
